@@ -100,8 +100,8 @@ temp <- pblapply(1:5509, function(x){
 }) %>% lapply(read_html) 
 
 
-# temp %>% 
-#   map(~html_element(.,"#ctl00_cph1_LabelReportTitle") %>% 
+temp %>%
+  map(~html_element(.,"#ctl00_cph1_GridViewReport")) %>%
 #         html_text() %>% 
 #         str_remove_all("Location: AUSTRALIAGas: | Emissions2019, UNFCCC Accounting")) %>% 
 #   unlist() %>% 
