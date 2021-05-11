@@ -1,0 +1,68 @@
+index,gas
+32,Carbon Monoxide
+33,Carbon Dioxide
+34,Methane
+35,Nitrous Oxide
+36,Nitrogen Oxides
+37,Non-Methane Volatile Organic Compounds
+38,HFC-23
+39,HFC-32
+40,HFC-41
+41,HFC-43-10mee
+42,HFC-125
+43,HFC-134
+44,HFC-134a
+45,HFC-143
+46,HFC-143a
+47,HFC-152a
+48,HFC-227ea
+49,HFC-236fa
+50,HFC-245ca
+51,Unspecified mix of HFCs
+52,CF4
+53,C2F6
+54,C3F8
+55,C4F10
+56,c-C4F8
+57,C5F12
+58,C6F14
+59,Sulphur Hexafluoride
+60,Sulphur Dioxide
+62,HFC-245fa
+64,HFC-365mfc
+65,Black Carbon
+66,PM 2.5
+67,PM 10
+103,Carbon Dioxide Equivalent - AR5
+104,Other - AR5
+105,Hydrofluorocarbons - AR5
+106,Perfluorocarbons - AR5
+107,Carbon Dioxide - AR5
+108,Methane - AR5
+109,Nitrous Oxide - AR5
+110,Sulphur Hexafluoride - AR5
+111,Carbon Dioxide Equivalent Confidential - AR5
+112,HFC-23 - AR5
+113,HFC-32 - AR5
+114,HFC-41 - AR5
+115,HFC-43-10mee - AR5
+116,HFC-125 - AR5
+117,HFC-134 - AR5
+118,HFC-134a - AR5
+119,HFC-143 - AR5
+120,HFC-143a - AR5
+121,HFC-152a - AR5
+122,HFC-227ea - AR5
+123,HFC-236fa - AR5
+124,HFC-245ca - AR5
+125,Unspecified mix of HFCs - AR5
+126,CF4 - AR5
+127,C2F6 - AR5
+128,C3F8 - AR5
+129,C4F10 - AR5
+130,c-C4F8 - AR5
+131,C5F12 - AR5
+132,C6F14 - AR5
+133,Other Perfluorocarbons - AR5
+134,HFC-245fa - AR5
+135,HFC-365mfc - AR5
