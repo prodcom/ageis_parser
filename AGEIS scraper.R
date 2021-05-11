@@ -21,15 +21,20 @@ library(pbapply)
 
 
 
-# Create ordered location and gas type vectors (options are passed as integers)
-# locations <- c(
-#   
-# )
+# Error handling
+`%iferror%` <- function(a, b) tryCatch({a}, error = function(e){b})
 
 
 
 
-# Define POST config
+# Load gas type and location metadata
+gas_table <- read_csv("API metadata/gases.csv")
+location_table <- read_csv("API metadata/locations.csv")
+
+
+
+
+# Define POST URL and headers
 url <- 'https://ageis.climatechange.gov.au/'
 
 ageis_headers <- c(
@@ -49,68 +54,121 @@ ageis_headers <- c(
   'Sec-Fetch-Dest'   = 'empty', 
   'Referer'          = 'https://ageis.climatechange.gov.au/',
   'Accept-Language'  = 'en-GB,en-US;q=0.9,en;q=0.8',
-  'Cookie'           = 'ASP.NET_SessionId=cmmsnf1wkh4c0ocij1qagcln'
+  'Cookie'           = 'ASP.NET_SessionId=djsldjogtixt0lle2o4uhce2'
 )
 
-aegis_form_options <- function(sector){
+
+
+
+# Define function for post form options
+aegis_form_options <- function(year, location, gas){
+  
+  location_number <- location_table$index[match(location, location_table$location)]
+  gas_number <- gas_table$index[match(gas, gas_table$gas)]
+  
   list(
     'ctl00$ScriptManager1' = 'ctl00$cph1$UpdatePanel1|ctl00$cph1$ButtonViewEmission',
-    'ctl00$cph1$WebUserControlInventoryYearSelection1$InventoryYearDropDownID' = '2019',
-    'ctl00$cph1$WebUserControlLocation1$LocationDropDownID' = '3',
+    'ctl00$cph1$WebUserControlInventoryYearSelection1$InventoryYearDropDownID' = as.character(year),
+    'ctl00$cph1$WebUserControlLocation1$LocationDropDownID' = location_number,
     'ctl00$cph1$selectionFuelUNFCCC' = '1',
-    'ctl00$cph1$selectionSectorUNFCCC' = as.character(sector), #paste(1:5509, collapse = ";"),
-    'ctl00$cph1$selectionGasUNFCCC' = "32",
+    'ctl00$cph1$selectionSectorUNFCCC' = paste(1:5509, collapse = ";"),
+    'ctl00$cph1$selectionGasUNFCCC' = gas_number,
     'ctl00$cph1$selectionEmissionUNFCCC' = '13',
     '__EVENTTARGET' = '',
     '__EVENTARGUMENT' = '',
     '__LASTFOCUS' = '',
-    '__VIEWSTATE' = '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',
+    '__VIEWSTATE' = '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',
     '__VIEWSTATEGENERATOR' = '0B5B08D9',
-    '__EVENTVALIDATION' = 'cVWhXrnmG0hSDFU5FPHhmO/bEyrM5oYKmHalL3BLD5IdVWtNCkjCDNZKHsafxi2oBKxkGNsDotgLH0gCCelAbLmPAsjovxnh2ZvLpxcmkwEz9Gs2m3/+u5Rgi+C/yaPyJ4IKJ11yF9o9dxTy+ZECH5kl3R3yDkRpu/Lf1iE7+yvcHqOBp6y+U+DT9D3Y6AxKP7iA6vNMbthQygDIfRDHGuHOR2ns+Lr/XYwJG/vr5uKkPRItn+LvAi3uYhrENsFXY0ep5HX00FLPt5RXWmzuxyfj+2vwdiI1yQSZ8M77WGmKCQO+OkGMkcu2Eaw2qfzB/Pv/CPmvsN9MBEOQhvjgGBqhchR8tjNJQpDj30h5h2KjfqpHXNXJtvsKGhVar7FI18kwG4eAJrZ4+ERnljNURL2UK/EGt26rHHypTh7ebl160oqnL6G3EYArJy3eRqrtcCRUQIEMZVujZbNOSlGLB5Bk/KCRkLVeSWKkYuKjOuv8PX1iCfnLf4lkzvhuNnoQHRi7IjZk+DHDY6fPh9ECe25LO/XmEQz7cStpd9O9qE2jMFd/Gme1esf3mfwKUYZCZLENN7l1Deu95wmaJS5yAXEaqLc0LMVpzFEe4l4Fig5QDAFkdwuN7+D5a9BQdXiiAQXhpGw4AUYb112SkP6MynOXxP4kNJkRB0Q4faFEj3uce2RUsBW0KXnVZ6DY0vRvV8nV1cD8FPTEP3SHA0O74SX5oZ2z/COPurdaGYaAg+jwZ1fXC9N726G682jLLLxvc86ZXLOduE+Papsxd9jfcaTM/A2IDqBVuE5kxoWgnJ3J2FUXh4gkTNsAwvEa10Ej/0pvHM5NsgNym5SXDZurQPPHT/rRYvBNmkDdRoog8tXCVQ9mXIOfBz296TWLAycUbdqeVKhXBbFdsAigyuYbOmIVQQF9562/9PLzm8JFSLbydvt0ce8LNrwuBPzFa1DiyagFJmdONzTpEu2oxFYykt6P6Qn5gTib2NiGm6Bd4Avymij0ncscHXLK3Sy4GpVeKDoQRzUmg3A3k+plhNZRouPGO3xdh4YfRg+V9LWG0zPM+Y/GXO4dGvMTHZpT1clJj7SM6lItQmWl5RtwLsDL8GVPe5ezXuqDHF8TecTaiY88tpGHV4rAF+sTflNG5/pV',
+    '__EVENTVALIDATION' = 'zZMXQIdaORTekEGNyn1LA5ShGH7gC2zWLxIAZsRWbpQqYguBNbCRLBSxMDQNBu1A1Ott8pXZYSLapU+Wh7r8gXaYF25HAfuU4Knh5bHHRaPchdIFXh7OCju/fHKQLtEigVB4VsFCH2NJh6vpM7ayAnPbidzAs1OgAXtHSOXB3TnIT28tT/8EKK9sDSLTpkfROePFL1p1MEkOFDMJmgWLXs10tjHO9OVhvVJvGKZuej4La9wOLIc17KEufbvEI77lTjR/VjIPktBol/kiq4bfqWIdAmfL8eOWoyppGLj8xwoI7oF8Jc92xi/Wj+2/QKErCVtHU75Th9ydlvgCJhi2mJquX6u2CxlT6P1wrzR6r0NAqS4B6IwY/qyuQNahKfAH/o3M+RbZBo3aHP5gEm+VrBJqNcN7C/GidVEJZW6+Lz/3Z2Ot1LsJ0jfu6fXLihlrpVIBBpxIu52DB00gA3akjbyXu3zQ1XI1aFdNJCVLbDDRS0/maXxJL3b8+pfPQDg1Yf5L9w3CeUjXdKnLs8kMirpK1MFAJXvIgr5GR62A7hUl3XoFTfUDjYVCvroqGlyIxgRPP+7dLnn9ZefJgQp5BRAn0V2Vnw+A/50pxoVYod0w7K4ARpjWIq4xspj1tJtU8N4s17ULGbH6kcwedU/6rR+a0ANZjr/hKzEQ6nBLiw1v3EeCjWHpyEx/fAcUyCaTRJoD2KMxS/R2K7toZja1zlWIJE6LzmRpFi4F1GLIdqSPXOfTs89Q+euzbIBKpND2gsjfIVAW0BxRoVjPE0nitvF4JlyCh4HRPJ40WEBucfd/IkTOdkJcqdXtuv4nT+PGD91N54uHotQ9p9dH8mdNXbLmM4rgOKDq1LHQd6suSfwL497/Q/rSxDdF2+yInC22l0nzITomPsBDwMT86sdyyYtCsfRo3nutdALP5SziP4RL6TGSNCzC2zvo7y4xLOI5PAxj1I0bOA0901OUehC9iKvMAlI/1+gZq/jM6o1xTOhzSWywMqh4Qd+UOXfpkT5UWtogjo2596iC8mljnwaDaeOQ4sTU66x/TAErC8UdUTdiiWaFR4oCy6KtyhkgRxes9iuoPQ43Tmx+Nn9GmbGUbkgTnYmBz8xOK/m588G37hBu9OB3IFgkjj5HC/IURHsB',
     '__VIEWSTATEENCRYPTED' = '',
     '__ASYNCPOST' = 'true',
     'ctl00$cph1$ButtonViewEmission' = 'Click to View Emissions'
   )
 }
+
+
+
+
+# Define function to run POST and return dataframe
+ageis_table <- function(year, location, gas){
+  df <- POST(
+    url = url,
+    add_headers(.headers = ageis_headers),
+    body = aegis_form_options(year = year, location = location, gas = gas),
+    encode = "form"
+    ) %>% 
+    read_html() %>% 
+    html_element("#ctl00_cph1_GridViewReport") %>% 
+    html_table() %iferror%
+    return(NULL)
   
+  df$year <- year
+  df$location <- location
+  df$gas <- gas
   
-
-
-# test <- POST(
-#   url = url, 
-#   add_headers(.headers = ageis_headers), 
-#   body = aegis_form_options,
-#   encode = "form"
-# )
-# 
-# test %>%
-#   read_html %>%
-#   html_children()
-# 
-# write_html(read_html(test), "C:/Users/Henry/Downloads/test.html")
-# shell.exec("C:/Users/Henry/Downloads/test.html")
-
-temp <- pblapply(1:5509, function(x){
-  POST(
-      url = url,
-      add_headers(.headers = ageis_headers),
-      body = aegis_form_options(x),
-      encode = "form"
-    )
-}) %>% lapply(read_html) 
-
-
-temp %>%
-  map(~html_element(.,"#ctl00_cph1_GridViewReport")) %>%
-#         html_text() %>% 
-#         str_remove_all("Location: AUSTRALIAGas: | Emissions2019, UNFCCC Accounting")) %>% 
-#   unlist() %>% 
-#   cbind(index = 100:150, gas = .) %>% 
-#   as.data.frame() %>% 
-#   mutate(index = as.integer(index)) %>% 
-#   write_csv("C:/Rprojects/AGEIS parser/API metadata/temp.csv")
-# 
-# shell.exec("C:/Rprojects/AGEIS parser/API metadata/temp.csv")
+  return(df)
+}  
 
 
 
+
+# Define all plausable combinations of year, location and gas
+all_options <- expand.grid(
+  years = 1990:2019, 
+  locations = location_table$location,
+  gases = gas_table$gas
+)
+
+
+
+
+# Run POST for all option combinations
+all_data <- pbmapply(
+  ageis_table, 
+  all_options$years[1:10],
+  all_options$locations[1:10],
+  all_options$gases[1:10],
+  SIMPLIFY = FALSE
+  ) 
+
+
+
+
+# Row bind and clean output data
+all_data <- all_data %>% 
+  bind_rows %>% 
+  rename(
+    sector_code = 1, 
+    sector = Category, 
+    gigagrams = `Gg (1,000 Tonnes)`
+    ) %>% 
+  mutate(
+    sector_level = sector_code %>% str_remove_all("[:punct:]") %>% nchar(),
+    gigagrams = gigagrams %>% str_remove_all(",") %>% as.numeric(),
+    gas = gas %>% str_to_lower() %>% str_replace_all("[:blank:]", "_")
+  ) %>% 
+  select(year, location, sector_level, sector_code, sector, gas, gigagrams) %>% 
+  pivot_wider(names_from = gas, values_from = gigagrams)
+
+
+
+
+# Separate sector levels
+sector_total <- all_data %>% filter(sector_level == 0) %>% select(-sector_level)
+sector_lvl_1 <- all_data %>% filter(sector_level == 1) %>% select(-sector_level)
+sector_lvl_2 <- all_data %>% filter(sector_level == 2) %>% select(-sector_level)
+sector_lvl_3 <- all_data %>% filter(sector_level == 3) %>% select(-sector_level)
+sector_lvl_4 <- all_data %>% filter(sector_level == 4) %>% select(-sector_level)
+sector_lvl_5 <- all_data %>% filter(sector_level == 5) %>% select(-sector_level)
+
+
+
+
+# Save all data
+write_csv(all_data, "data/all data.csv")
+write_csv(sector_total, "data/sector_total.csv")
+write_csv(sector_lvl_1, "data/sector level 1.csv")
+write_csv(sector_lvl_2, "data/sector level 2.csv")
+write_csv(sector_lvl_3, "data/sector level 3.csv")
+write_csv(sector_lvl_4, "data/sector level 4.csv")
+write_csv(sector_lvl_5, "data/sector level 5.csv")
