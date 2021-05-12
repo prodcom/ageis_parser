@@ -62,7 +62,7 @@ ageis_headers <- c(
 
 
 # Define function for post form options
-aegis_form_options <- function(year, location, gas){
+ageis_form_options <- function(year, location, gas){
   
   location_number <- location_table$index[match(location, location_table$location)]
   gas_number <- gas_table$index[match(gas, gas_table$gas)]
@@ -95,7 +95,7 @@ ageis_table <- function(year, location, gas){
   df <- POST(
     url = url,
     add_headers(.headers = ageis_headers),
-    body = aegis_form_options(year = year, location = location, gas = gas),
+    body = ageis_form_options(year = year, location = location, gas = gas),
     encode = "form"
     ) %>% 
     read_html() %>% 
@@ -129,7 +129,7 @@ clusterEvalQ(cl, {library(tidyverse); library(httr); library(rvest)})
 clusterExport(cl, c(
   "url", 
   "ageis_headers", 
-  "aegis_form_options",
+  "ageis_form_options",
   "ageis_table",
   "all_options",
   "%iferror%",
