@@ -6,10 +6,10 @@
 # National Greenhouse Gas Inventory website. The POST request returns a html
 # table which can be parsed. All parts of the POST request are verbatim copies 
 # of a manually executed update except for the year, location, gas type and 
-# industries which are modified for each loop run.
+# industries which are modified for as per the function call.
 
 # NOTE: you may need to source this file instead of the usual run command as it
-#       contains some strings longer than the parser allows (lines 56 and 58).
+#       contains some strings longer than the parser allows (lines 81 and 83).
 
 
 # Packages
@@ -17,6 +17,7 @@ library(tidyverse)
 library(httr)
 library(rvest)
 library(pbapply)
+library(snow)
 
 
 
@@ -112,7 +113,7 @@ ageis_table <- function(year, location, gas){
 
 
 
-# Define all plausable combinations of year, location and gas
+# Define all plausible combinations of year, location and gas
 all_options <- expand.grid(
   years = 1990:2019, 
   locations = location_table$location,
@@ -122,32 +123,60 @@ all_options <- expand.grid(
 
 
 
+# Initialize clusters for multithreaded scraping
+cl <- makeCluster(parallel::detectCores(logical = T))
+clusterEvalQ(cl, {library(tidyverse); library(httr); library(rvest)})
+clusterExport(cl, c(
+  "url", 
+  "ageis_headers", 
+  "aegis_form_options",
+  "ageis_table",
+  "all_options",
+  "%iferror%",
+  "gas_table",
+  "location_table"
+  )
+)
+
+
+
+
 # Run POST for all option combinations
-all_data <- pbmapply(
-  ageis_table, 
-  all_options$years[1:10],
-  all_options$locations[1:10],
-  all_options$gases[1:10],
-  SIMPLIFY = FALSE
-  ) 
+all_data <- pblapply(
+  1:nrow(all_options),
+  function(i){
+    ageis_table(
+      all_options$years[i],
+      all_options$locations[i],
+      all_options$gases[i]
+      )
+  },
+  cl = cl
+  )
+
+
+
+
+# Close cluster
+stopCluster(cl)
 
 
 
 
 # Row bind and clean output data
-all_data <- all_data %>% 
-  bind_rows %>% 
+all_data <- all_data %>%
+  bind_rows %>%
   rename(
-    sector_code = 1, 
-    sector = Category, 
+    sector_code = 1,
+    sector = Category,
     gigagrams = `Gg (1,000 Tonnes)`
-    ) %>% 
+    ) %>%
   mutate(
     sector_level = sector_code %>% str_remove_all("[:punct:]") %>% nchar(),
     gigagrams = gigagrams %>% str_remove_all(",") %>% as.numeric(),
     gas = gas %>% str_to_lower() %>% str_replace_all("[:blank:]", "_")
-  ) %>% 
-  select(year, location, sector_level, sector_code, sector, gas, gigagrams) %>% 
+  ) %>%
+  select(year, location, sector_level, sector_code, sector, gas, gigagrams) %>%
   pivot_wider(names_from = gas, values_from = gigagrams)
 
 
